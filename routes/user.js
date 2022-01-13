@@ -80,7 +80,7 @@ router.post("/:userId/follow", authenticateUser, async (req, res) => {
 
   try {
     // Finding the user to be followed
-    const userToBeFollowed = User.findById(req.params.userId);
+    const userToBeFollowed = await User.findById(req.params.userId);
 
     // If user to be followed is not found
     if (!userToBeFollowed)
@@ -93,10 +93,7 @@ router.post("/:userId/follow", authenticateUser, async (req, res) => {
     if (!currentUser) return res.status(404).json({ msg: "User not found." });
 
     // Checking if already following the requested user
-    if (
-      currentUser.following.includes(userToBeFollowed._id) &&
-      userToBeFollowed.followers.includes(currentUser._id)
-    )
+    if (currentUser.following.includes(userToBeFollowed._id))
       return res
         .status(404)
         .json({ msg: "Already following the requested user." });
@@ -122,7 +119,7 @@ router.post("/:userId/unfollow", authenticateUser, async (req, res) => {
 
   try {
     // Finding the user to be followed
-    const userToBeUnfollowed = User.findById(req.params.userId);
+    const userToBeUnfollowed = await User.findById(req.params.userId);
 
     // If user to be unfollowed is not found
     if (!userToBeUnfollowed)
@@ -135,12 +132,7 @@ router.post("/:userId/unfollow", authenticateUser, async (req, res) => {
     if (!currentUser) return res.status(404).json({ msg: "User not found." });
 
     // Checking if already not following the requested user
-    if (
-      !(
-        currentUser.following.includes(userToBeUnfollowed._id) &&
-        userToBeUnfollowed.followers.includes(currentUser._id)
-      )
-    )
+    if (!currentUser.following.includes(userToBeUnfollowed._id))
       return res
         .status(404)
         .json({ msg: "Already not following the requested user." });
