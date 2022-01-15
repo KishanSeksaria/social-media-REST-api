@@ -1,12 +1,14 @@
 // Imports and config
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import User from "../models/User.js";
 dotenv.config();
 const jwtSecret =
   process.env.JWT_SECRET || "Thisismyreallylongjsonwebtokensecret.";
 
 // Methods
-const authenticateUser = (req, res, next) => {
+// This middleware finds the current logged in user using the jtw and adds it to req.body as 'currentUser'
+const authenticateUser = async (req, res, next) => {
   // Acquiring authentication token from request header
   const token = req.header("auth-token");
 
@@ -21,15 +23,24 @@ const authenticateUser = (req, res, next) => {
     // verifying and decoding the auth token using the jwt secret
     const data = jwt.verify(token, jwtSecret);
 
-    // adding the decoded data as an object called auth into request
-    req.body.auth = data;
+    // Check if the user still exists
+    // Search for the user
+    const user = await User.findById(data.userId);
+
+    // If user not found
+    if (!user)
+      return res
+        .status(401)
+        .json({ error: "Please authenticate using a valid token." });
+
+    // adding the current user to request object body
+    req.body.currentUser = user;
 
     // calling the next parameter method of the super function
     next();
   } catch (error) {
-    return res
-      .status(401)
-      .json({ error: "Please authenticate using a valid token." });
+    console.error(err);
+    return res.status(500).json({ err });
   }
 };
 

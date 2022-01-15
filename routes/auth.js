@@ -6,7 +6,6 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config();
-
 const jwtSecret =
   process.env.JWT_SECRET || "Thisismyreallylongjsonwebtokensecret.";
 
@@ -39,7 +38,7 @@ router.post("/register", async (req, res) => {
     res.status(200).json({ authToken });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ msg: "Internal Server Error" });
+    res.status(500).json({ err });
   }
 });
 
@@ -65,7 +64,7 @@ router.post("/login", async (req, res) => {
     res.status(200).json({ authToken });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ msg: "Internal server error." });
+    res.status(500).json({ err });
   }
 });
 

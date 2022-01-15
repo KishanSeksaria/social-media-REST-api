@@ -1,103 +1,90 @@
 // Imports and config
 import express from "express";
 const router = express.Router();
-import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import authenticateUser from "../middlewares/authentication.js";
+import { deleteUser } from "../extras/delete.js";
+import { findUser } from "../middlewares/find.js";
 
 // Routes
 // ROUTE 1: Get a user. GET 'api/users/:userId'. No Login required.
-router.get("/:userId", async (req, res) => {
-  try {
-    // Searching for the user with the id
-    const foundUser = await User.findById(req.params.userId);
+router.get("/:userId", findUser, async (req, res) => {
+  // Extracting foundUser from req.body
+  const { foundUser } = req.body;
 
-    // If no such user exists, respond accordingly
-    if (!foundUser) return res.status(404).json({ msg: "No user found." });
+  // If found, take everything except password and send to the client
+  const { password, ...others } = foundUser._doc;
 
-    // If found, take everything except password and send to the client
-    const { password, ...others } = foundUser._doc;
-    res.status(200).json(others);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ msg: "Internal server error." });
-  }
+  // Sending details of foundUser except password to the client
+  res.status(200).json(others);
 });
 
 // ROUTE 2: Update a user. PUT '/api/users/:userId'. Login required.
-router.put("/:userId", authenticateUser, async (req, res) => {
-  const { user, auth } = req.body;
-  try {
-    // If user is not the current user or an admin, respond unauthorized
-    if (auth.userId !== req.params.userId && !auth.isAdmin)
-      return res.status(400).json({ msg: "Unauthorized." });
+router.put("/:userId", authenticateUser, findUser, async (req, res) => {
+  // Extracting currentUser, foundUser and updatedUser(data to be updated) from req.body
+  const { currentUser, foundUser, updatedUser } = req.body;
 
+  // If user is not the current user or an admin, respond unauthorized
+  if (!currentUser.equals(foundUser) && !currentUser.isAdmin)
+    return res.status(400).json({ msg: "Unauthorized." });
+
+  try {
     // If user tries to update password, hash it again
-    if (user.password) {
-      user.password = await bcrypt.hash(
-        user.password,
+    if (updatedUser.password) {
+      updatedUser.password = await bcrypt.hash(
+        updatedUser.password,
         await bcrypt.genSalt(10)
       );
     }
 
-    // Finally update the user with the fields entered by the user and send it as response
-    const updatedUser = await User.findByIdAndUpdate(req.params.userId, {
-      $set: user,
-    });
+    // Finally update the user with the fields entered by the user
+    await foundUser.updateOne({ $set: updatedUser });
+
+    // Sending the success response
     res.status(200).json({ msg: "User successfully updated." });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ msg: "Internal server error." });
+    res.status(500).json({ err });
   }
 });
 
 // ROUTE 3: Delete a user. DELETE 'api/users/:userId'. Login required.
-router.delete("/:userId", authenticateUser, async (req, res) => {
-  const { auth } = req.body;
-  try {
-    // If user is not the current user or an admin, respond unauthorized
-    if (auth.userId !== req.params.userId && !auth.isAdmin)
-      return res.status(400).json({ msg: "Unauthorized." });
+router.delete("/:userId", authenticateUser, findUser, async (req, res) => {
+  // Extracting currentUser and foundUser from req.body
+  const { currentUser, foundUser } = req.body;
 
-    // If user not found, or not deleted
-    if (!(await User.findByIdAndDelete(req.params.userId)))
-      return res.status(404).json({ msg: "User not found." });
+  // If user is not the current user or an admin, respond unauthorized
+  if (!currentUser.equals(foundUser) && !auth.isAdmin)
+    return res.status(400).json({ msg: "Unauthorized." });
+
+  try {
+    // Deleting the user
+    await deleteUser(foundUser);
 
     // If user deleted successfully, respond with a confirmation message
-    return res.status(200).json({ msg: "User successfully deleted." });
+    res.status(200).json({ msg: "User successfully deleted." });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ msg: "Internal server error." });
+    res.status(500).json({ err });
   }
 });
 
 // ROUTE 4: Follow a user. POST 'api/users/:userId/follow'. Login required.
-// The parameter 'userId' is for the user to be followed and we can obtain the current logged in user id fron the jsonwebtoken
-router.post("/:userId/follow", authenticateUser, async (req, res) => {
-  const { auth } = req.body;
-  if (auth.userId === req.params.userId)
+router.post("/:userId/follow", authenticateUser, findUser, async (req, res) => {
+  // Extracting currentUser and foundUser(as userToBeFollowed) from req.body
+  const { currentUser, foundUser: userToBeFollowed } = req.body;
+
+  // If the user tries to follow themselves
+  if (currentUser.equals(userToBeFollowed))
     return res.status(404).json({ msg: "You cannot follow yourself." });
 
+  // Checking if already following the requested user
+  if (currentUser.following.includes(userToBeFollowed._id))
+    return res
+      .status(404)
+      .json({ msg: "Already following the requested user." });
+
   try {
-    // Finding the user to be followed
-    const userToBeFollowed = await User.findById(req.params.userId);
-
-    // If user to be followed is not found
-    if (!userToBeFollowed)
-      return res.status(404).json({ msg: "User not found." });
-
-    // Finding the current user
-    const currentUser = await User.findById(auth.userId);
-
-    // If current user is not found
-    if (!currentUser) return res.status(404).json({ msg: "User not found." });
-
-    // Checking if already following the requested user
-    if (currentUser.following.includes(userToBeFollowed._id))
-      return res
-        .status(404)
-        .json({ msg: "Already following the requested user." });
-
     // Updating the users to include follow details
     await currentUser.updateOne({ $push: { following: userToBeFollowed._id } });
     await userToBeFollowed.updateOne({ $push: { followers: currentUser._id } });
@@ -106,30 +93,22 @@ router.post("/:userId/follow", authenticateUser, async (req, res) => {
     res.status(200).json({ msg: "User followed successfully." });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ msg: "Internal server error." });
+    res.status(500).json({ err });
   }
 });
 
 // ROUTE 5 Unfollow a user. POST 'api/users/:userId/unfollow'. Login required.
-// The parameter 'userId' is for the user to be followed and we can obtain the current logged in user id fron the jsonwebtoken
-router.post("/:userId/unfollow", authenticateUser, async (req, res) => {
-  const { auth } = req.body;
-  if (auth.userId === req.params.userId)
-    return res.status(404).json({ msg: "You cannot unfollow yourself." });
+router.post(
+  "/:userId/unfollow",
+  authenticateUser,
+  findUser,
+  async (req, res) => {
+    // Extracting currentUser and foundUser(as userToBeUnfollowed) from req.body
+    const { currentUser, foundUser: userToBeUnfollowed } = req.body;
 
-  try {
-    // Finding the user to be followed
-    const userToBeUnfollowed = await User.findById(req.params.userId);
-
-    // If user to be unfollowed is not found
-    if (!userToBeUnfollowed)
-      return res.status(404).json({ msg: "User not found." });
-
-    // Finding the current user, which will be found because the user is logged in
-    const currentUser = await User.findById(auth.userId);
-
-    // If current user is not found
-    if (!currentUser) return res.status(404).json({ msg: "User not found." });
+    // If the user tries to unfollow themselves
+    if (currentUser.equals(userToBeUnfollowed))
+      return res.status(404).json({ msg: "You cannot unfollow yourself." });
 
     // Checking if already not following the requested user
     if (!currentUser.following.includes(userToBeUnfollowed._id))
@@ -137,21 +116,23 @@ router.post("/:userId/unfollow", authenticateUser, async (req, res) => {
         .status(404)
         .json({ msg: "Already not following the requested user." });
 
-    // Updating the users to remove follow details
-    await currentUser.updateOne({
-      $pull: { following: userToBeUnfollowed._id },
-    });
-    await userToBeUnfollowed.updateOne({
-      $pull: { followers: currentUser._id },
-    });
+    try {
+      // Updating the users to remove follow details
+      await currentUser.updateOne({
+        $pull: { following: userToBeUnfollowed._id },
+      });
+      await userToBeUnfollowed.updateOne({
+        $pull: { followers: currentUser._id },
+      });
 
-    // Responding after the job is done
-    res.status(200).json({ msg: "User unfollowed successfully." });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ msg: "Internal server error." });
+      // Responding after the job is done
+      res.status(200).json({ msg: "User unfollowed successfully." });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ err });
+    }
   }
-});
+);
 
 // Exports
 export default router;

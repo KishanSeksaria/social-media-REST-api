@@ -6,6 +6,8 @@ import morgan from "morgan";
 import helmet from "helmet";
 import userRoute from "./routes/user.js";
 import authRoute from "./routes/auth.js";
+import postRoute from "./routes/post.js";
+import commentRoute from "./routes/comment.js";
 
 // Config
 dotenv.config();
@@ -23,8 +25,10 @@ mongoose.connect(MongoURL, (err) => {
 app.use(express.json());
 app.use(helmet());
 app.use(morgan("common"));
-app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
+app.use("/api/users", userRoute);
+app.use("/api/posts", postRoute);
+app.use("/api/comments", commentRoute);
 
 // Routes
 app.get("/", (req, res) => {
