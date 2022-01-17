@@ -9,7 +9,7 @@ const router = express.Router();
 
 // Routes
 // Route 1: Create a post. POST '/api/posts'. Login required.
-router.post("/", authenticateUser, findUser, async (req, res) => {
+router.post("/", authenticateUser, async (req, res) => {
   // Extracting currentUser and post(details to create the post) from req.body
   const { currentUser, post } = req.body;
 
@@ -38,7 +38,7 @@ router.post("/", authenticateUser, findUser, async (req, res) => {
 });
 
 // Route 2: Get all timeline posts. GET '/api/posts'. Login required.
-router.get("/", authenticateUser, findUser, async (req, res) => {
+router.get("/", authenticateUser, async (req, res) => {
   // Extracting the current user from req.body
   const { currentUser } = req.body;
 
@@ -106,63 +106,50 @@ router.put(
 );
 
 // Route 5: Delete a post. DELETE '/api/posts/:postId'. Login required.
-router.delete(
-  "/:postId",
-  authenticateUser,
-  findUser,
-  findPost,
-  async (req, res) => {
-    // Extracting currentUser and foundPost from req.body
-    const { currentUser, foundPost } = req.body;
+router.delete("/:postId", authenticateUser, findPost, async (req, res) => {
+  // Extracting currentUser and foundPost from req.body
+  const { currentUser, foundPost } = req.body;
 
-    // If user does not own the post, and is not any admin
-    if (!currentUser._id.equals(foundPost.user) && !currentUser.isAdmin)
-      return res.status(404).json({ msg: "You can only delete your posts." });
+  // If user does not own the post, and is not any admin
+  if (!currentUser._id.equals(foundPost.user) && !currentUser.isAdmin)
+    return res.status(404).json({ msg: "You can only delete your posts." });
 
-    try {
-      // Deleting the post
-      await deletePost(foundPost);
+  try {
+    // Deleting the post
+    await deletePost(foundPost);
 
-      // Responding after successful deletion
-      res.status(200).json({ msg: "Post deleted successfully." });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ err });
-    }
+    // Responding after successful deletion
+    res.status(200).json({ msg: "Post deleted successfully." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ err });
   }
-);
+});
 
 // Route 6: Like/Dislike a post. POST '/api/posts/:postId/like'. Login required.
-router.post(
-  "/:postId/like",
-  authenticateUser,
-  findUser,
-  findPost,
-  async (req, res) => {
-    // Extracting currentUser and foundPost from req. body
-    const { currentUser, foundPost } = req.body;
+router.post("/:postId/like", authenticateUser, findPost, async (req, res) => {
+  // Extracting currentUser and foundPost from req. body
+  const { currentUser, foundPost } = req.body;
 
-    try {
-      // If the user already likes the post, remove the like, else like it
-      if (foundPost.likes.includes(currentUser._id)) {
-        await foundPost.updateOne({ $pull: { likes: currentUser._id } });
-        res.status(200).json({ msg: "Post unliked successfully." });
-      } else {
-        await foundPost.updateOne({ $push: { likes: currentUser._id } });
-        res.status(200).json({ msg: "Post liked successfully." });
-      }
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ err });
+  try {
+    // If the user already likes the post, remove the like, else like it
+    if (foundPost.likes.includes(currentUser._id)) {
+      await foundPost.updateOne({ $pull: { likes: currentUser._id } });
+      res.status(200).json({ msg: "Post unliked successfully." });
+    } else {
+      await foundPost.updateOne({ $push: { likes: currentUser._id } });
+      res.status(200).json({ msg: "Post liked successfully." });
     }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ err });
   }
-);
+});
 
 // Route 7: Comment on a post. POST '/api/posts/:postId/comment'. Login required.
 router.post(
   "/:postId/comment",
   authenticateUser,
-  findUser,
   findPost,
   async (req, res) => {
     // Extracting currentUser, foundPost and comment from req.body

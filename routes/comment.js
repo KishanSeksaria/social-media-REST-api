@@ -17,45 +17,36 @@ router.get("/:commentId", authenticateUser, findComment, async (req, res) => {
 });
 
 // Route 2: Edit a comment. PUT '/api/comments/:commentId'. Login required.
-router.put(
-  "/:commentId",
-  authenticateUser,
-  findUser,
-  findComment,
-  async (req, res) => {
-    // Extracting currentUser and foundComment from req.body
-    const { currentUser, foundComment, updatedComment } = req.body;
+router.put("/:commentId", authenticateUser, findComment, async (req, res) => {
+  // Extracting currentUser and foundComment from req.body
+  const { currentUser, foundComment, updatedComment } = req.body;
 
-    // If the user tries to clear the comment
-    if (!updatedComment)
-      return res
-        .status(401)
-        .json({ msg: "Cannot clear a comment. Use delete method for this." });
+  // If the user tries to clear the comment
+  if (!updatedComment)
+    return res
+      .status(401)
+      .json({ msg: "Cannot clear a comment. Use delete method for this." });
 
-    // If the user does not own the comment
-    if (!currentUser._id.equals(foundComment.by))
-      return res
-        .status(200)
-        .json({ msg: "You can only edit your own comment." });
+  // If the user does not own the comment
+  if (!currentUser._id.equals(foundComment.by))
+    return res.status(200).json({ msg: "You can only edit your own comment." });
 
-    try {
-      // Updating the comment
-      await foundComment.updateOne({ $set: { content: updatedComment } });
+  try {
+    // Updating the comment
+    await foundComment.updateOne({ $set: { content: updatedComment } });
 
-      // responding after successful updation
-      res.status(200).json({ msg: "Comment updated Successfully." });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ msg: "Internal server error." });
-    }
+    // responding after successful updation
+    res.status(200).json({ msg: "Comment updated Successfully." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Internal server error." });
   }
-);
+});
 
 // Route 3: Delete a comment. DELETE '/api/comments/:commentId'. Login required.
 router.delete(
   "/:commentId",
   authenticateUser,
-  findUser,
   findComment,
   async (req, res) => {
     // Extracting currentUser and foundComment from req.body
@@ -82,7 +73,6 @@ router.delete(
 router.post(
   "/:commentId/like",
   authenticateUser,
-  findUser,
   findComment,
   async (req, res) => {
     // Extracting currentUser and foundComment from req.body
@@ -108,7 +98,6 @@ router.post(
 router.post(
   "/:commentId/reply",
   authenticateUser,
-  findUser,
   findComment,
   async (req, res) => {
     // Extracting currentUser, foundComment and comment(reply to be added) from req.body
