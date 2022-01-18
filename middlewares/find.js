@@ -15,8 +15,8 @@ const findUser = async (req, res, next) => {
       // If user not found
       if (!foundUser) return res.status(404).json({ msg: "User not found" });
 
-      // Adding founduser to request object body
-      req.body.foundUser = foundUser;
+      // Adding founduser to request object
+      req.foundUser = foundUser;
     }
 
     // Calling the next method
@@ -38,8 +38,8 @@ const findPost = async (req, res, next) => {
       // If no post found
       if (!post) return res.status(404).json({ msg: "Post not found" });
 
-      // Adding post to request object body
-      req.body.foundPost = post;
+      // Adding post to request object
+      req.foundPost = post;
     }
 
     // Calling the next method
@@ -61,8 +61,8 @@ const findComment = async (req, res, next) => {
       // If no comment found
       if (!comment) return res.status(404).json({ msg: "Comment not found" });
 
-      // Adding comment to request object body
-      req.body.foundComment = comment;
+      // Adding comment to request object
+      req.foundComment = comment;
     }
 
     // Calling the next method
