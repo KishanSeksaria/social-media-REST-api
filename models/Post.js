@@ -1,29 +1,34 @@
 // Imports
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 // Creating schema for user model
 const postSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
-    caption: {
+    title: {
       type: String,
-      default: "",
-      maxlength: 50,
+      default: '',
+      maxlength: 30,
     },
-    pictures: {
-      type: [String],
-      default: [],
+    description: {
+      type: String,
+      default: '',
+      maxlength: 100,
     },
     likes: {
-      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      default: [],
+    },
+    unlikes: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
       default: [],
     },
     comments: {
-      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }],
       default: [],
     },
   },
@@ -31,7 +36,7 @@ const postSchema = new mongoose.Schema(
 );
 
 // Creating post model using post schema
-const Post = mongoose.model("Post", postSchema);
+const Post = mongoose.model('Post', postSchema);
 
 // Exports
 export default Post;

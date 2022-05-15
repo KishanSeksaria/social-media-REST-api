@@ -1,22 +1,22 @@
 // Imports and config
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-import User from "../models/User.js";
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+import User from '../models/User.js';
 dotenv.config();
 const jwtSecret =
-  process.env.JWT_SECRET || "Thisismyreallylongjsonwebtokensecret.";
+  process.env.JWT_SECRET || 'Thisismyreallylongjsonwebtokensecret.';
 
 // Methods
 // This middleware finds the current logged in user using the jtw and adds it to req.body as 'currentUser'
 const authenticateUser = async (req, res, next) => {
   // Acquiring authentication token from request header
-  const token = req.header("auth-token");
+  const token = req.header('auth-token');
 
   // If there is no auth token in request header, send error
   if (!token) {
     return res
       .status(401)
-      .json({ error: "Please authenticate using a valid token." });
+      .json({ error: 'Please authenticate using a valid token.' });
   }
 
   try {
@@ -31,7 +31,7 @@ const authenticateUser = async (req, res, next) => {
     if (!user)
       return res
         .status(401)
-        .json({ error: "Please authenticate using a valid token." });
+        .json({ error: 'Please authenticate using a valid token.' });
 
     // adding the current user to request object body
     req.body.currentUser = user;
