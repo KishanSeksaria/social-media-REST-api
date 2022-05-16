@@ -10,7 +10,7 @@ import apiRoute from './routes/api.js';
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
-const MongoURL = process.env.MongoURL || 'mongodb://localhost:27017/social';
+const MongoURL = process.env.MongoURL;
 
 // Setting up DB connection
 mongoose.connect(MongoURL, err => {

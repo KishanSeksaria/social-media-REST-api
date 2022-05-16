@@ -3,8 +3,7 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import User from '../models/User.js';
 dotenv.config();
-const jwtSecret =
-  process.env.JWT_SECRET || 'Thisismyreallylongjsonwebtokensecret.';
+const jwtSecret = process.env.JWT_SECRET;
 
 // Methods
 // This middleware finds the current logged in user using the jtw and adds it to req.body as 'currentUser'

@@ -11,8 +11,7 @@ import authenticateUser from '../middlewares/authentication.js';
 import { findPost, findUser } from '../middlewares/find.js';
 import { deletePost } from '../extras/delete.js';
 dotenv.config();
-const jwtSecret =
-  process.env.JWT_SECRET || 'Thisismyreallylongjsonwebtokensecret.';
+const jwtSecret = process.env.JWT_SECRET;
 
 // Routes
 // ROUTE 1: Login a user. POST '/api/authenticate'. No Login required.
