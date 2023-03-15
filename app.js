@@ -9,7 +9,7 @@ import authRoute from "./routes/auth.js";
 import postRoute from "./routes/post.js";
 import commentRoute from "./routes/comment.js";
 import session from "express-session";
-import passport from "./passport.js";
+import passport from "./passport.js";//harsh
 import flash from "connect-flash";
 
 // Config
